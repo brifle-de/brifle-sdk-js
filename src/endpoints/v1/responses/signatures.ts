@@ -7,3 +7,7 @@ interface CreateSignatureReferenceResponse {
         role: string
     }[]
 }
+
+export type {
+    CreateSignatureReferenceResponse
+}

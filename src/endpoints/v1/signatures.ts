@@ -2,6 +2,7 @@ import axios, { AxiosError } from "axios"
 import { ApiV1, ApiV1State } from "../../api/api"
 import { CreateSignatureReferenceRequest } from "./requests/signatures"
 import { ApiResponse } from "./apiResponse"
+import { CreateSignatureReferenceResponse } from "./responses/signatures"
 
 class SignaturesEndpoint {
     private endpoint: string
