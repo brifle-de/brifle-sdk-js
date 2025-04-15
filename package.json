@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "description": "The JavaScript SDK to interact with the API of Brifle",
   "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "types": "dist/types/index.d.ts",
   "scripts": {
     "test": "jest --setupFiles dotenv/config",
     "test-jest": "jest",
@@ -23,7 +27,6 @@
   },
   "dependencies": {
     "axios": "^1.8.4",
-    "dotenv": "^16.1.4"
-    
+    "dotenv": "^16.1.4"    
   }
 }
