@@ -35,7 +35,6 @@ class SignaturesEndpoint {
         const headers = {
             "Authorization": `Bearer ${this.state.auth_token}`,
         }
-        console.log(tenantId)
         return axios.post<CreateSignatureReferenceResponse>(path, request, { headers })
             .then((response) => {
                 return ApiResponse.success(response.data)

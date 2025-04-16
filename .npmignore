@@ -1,0 +1,29 @@
+# Ignore build input
+src/
+*.ts
+*.tsx
+*.js
+*.jsx
+
+# Ignore test files
+__tests__/
+tests/
+*.test.ts
+*.spec.ts
+
+node_modules
+package-lock.json
+.vscode/
+.env
+.env.*
+
+# Ignore config files
+tsconfig*.json
+rollup.config.*.js
+rollup.config.js
+babel.config.js
+jest.config.js
+
+# Misc
+.npmignore
+.gitignore

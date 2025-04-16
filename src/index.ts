@@ -5,3 +5,7 @@ export * from "./endpoints/v1/requests/content";
 export * from "./endpoints/v1/responses/content";
 export * from "./endpoints/v1/requests/signatures";
 export * from "./endpoints/v1/responses/signatures";
+export * from "./endpoints/v1/apiResponse";
+export * from "./endpoints/v1/authentication";
+export * from "./endpoints/v1/content";
+export * from "./endpoints/v1/signatures";
