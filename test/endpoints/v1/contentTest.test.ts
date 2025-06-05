@@ -1,10 +1,9 @@
-import { assert } from "console";
 import { ApiV1 } from "../../../src/api/api";
 import { SignaturesEndpoint } from "../../../src/endpoints/v1/signatures";
 import fs from "fs";
 
 
-describe("AuthenticationEndpoints", () => {
+describe("ContentEndpoints", () => {
     const endpoint = "https://internaltest-api.brifle.de"
     const api = new ApiV1(endpoint);
     const auth = api.authentication()

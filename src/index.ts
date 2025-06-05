@@ -9,3 +9,6 @@ export * from "./endpoints/v1/apiResponse";
 export * from "./endpoints/v1/authentication";
 export * from "./endpoints/v1/content";
 export * from "./endpoints/v1/signatures";
+export * from "./endpoints/v1/mailbox";
+export * from "./endpoints/v1/requests/mailbox";
+export * from "./endpoints/v1/responses/mailbox";

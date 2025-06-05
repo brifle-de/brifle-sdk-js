@@ -3,7 +3,7 @@ import { ApiV1 } from "../../../src/api/api";
 import { SignaturesEndpoint } from "../../../src/endpoints/v1/signatures";
 
 
-describe("AuthenticationEndpoints", () => {
+describe("SignaturesEndpoints", () => {
     const endpoint = "https://internaltest-api.brifle.de"
     const api = new ApiV1(endpoint);
     const auth = api.authentication()
