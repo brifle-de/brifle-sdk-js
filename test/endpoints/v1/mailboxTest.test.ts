@@ -1,6 +1,4 @@
-import { assert } from "console";
 import { ApiV1 } from "../../../src/api/api";
-import { MailboxEndpoints } from "../../../src/endpoints/v1/mailbox";
 
 describe("MailboxEndpoints", () => {
     const endpoint = "https://internaltest-api.brifle.de"
@@ -18,7 +16,6 @@ describe("MailboxEndpoints", () => {
             key: key,
             secret: secret
         })
-        console.log(req)
         // assert that the response is a success
         expect(req.isSuccess).toBe(true)
         expect(req.data).toBeDefined()
@@ -41,7 +38,6 @@ describe("MailboxEndpoints", () => {
             key: key,
             secret: secret
         })
-        console.log(req)
         // assert that the response is a success
         expect(req.isSuccess).toBe(true)
         expect(req.data).toBeDefined()

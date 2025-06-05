@@ -12,3 +12,7 @@ export * from "./endpoints/v1/signatures";
 export * from "./endpoints/v1/mailbox";
 export * from "./endpoints/v1/requests/mailbox";
 export * from "./endpoints/v1/responses/mailbox";
+export * from "./endpoints/v1/tenant";
+export * from "./endpoints/v1/responses/tenant";
+export * from "./endpoints/v1/accounts";
+export * from "./endpoints/v1/responses/accounts";

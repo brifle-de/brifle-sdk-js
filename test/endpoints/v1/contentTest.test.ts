@@ -1,5 +1,4 @@
 import { ApiV1 } from "../../../src/api/api";
-import { SignaturesEndpoint } from "../../../src/endpoints/v1/signatures";
 import fs from "fs";
 
 

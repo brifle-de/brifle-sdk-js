@@ -1,6 +1,4 @@
-import { assert } from "console";
 import { ApiV1 } from "../../../src/api/api";
-import { SignaturesEndpoint } from "../../../src/endpoints/v1/signatures";
 
 
 describe("SignaturesEndpoints", () => {

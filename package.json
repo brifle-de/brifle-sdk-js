@@ -1,6 +1,6 @@
 {
   "name": "@brifle/brifle-sdk",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "The JavaScript SDK to interact with the API of Brifle",
   "files": [
     "dist",
