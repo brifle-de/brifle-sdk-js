@@ -3,10 +3,13 @@ interface InboxFilter {
     subject?: string
     sub_mailbox?: string
     type?: 'letter' | 'invoice' | 'contract'
+
 }
 
 interface OutboxFilter {
     state?: Array<'active' | 'trashed'>
+    subject?: string
+    type?: 'letter' | 'invoice' | 'contract'
 } 
 
 export type { InboxFilter, OutboxFilter };

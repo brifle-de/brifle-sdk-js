@@ -21,9 +21,11 @@ describe("MailboxEndpoints", () => {
         expect(req.data).toBeDefined()
         expect(req.data?.access_token).toBeDefined()
 
+
         const outbox = await mailbox.getOutbox(tenantId, {
-            state: ["active"]
-        }, 1);
+            state: ["active"],
+            subject: "test"
+        }, 1); 
 
         expect(outbox.isSuccess).toBe(true)
         expect(outbox.data).toBeDefined()

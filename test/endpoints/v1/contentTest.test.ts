@@ -1,3 +1,4 @@
+import { assert } from "console";
 import { ApiV1 } from "../../../src/api/api";
 import fs from "fs";
 
@@ -92,7 +93,6 @@ describe("ContentEndpoints", () => {
             type: "letter",            
         })
 
-        console.log(contentRes)
 
         expect(contentRes.isSuccess).toBe(true)
         expect(contentRes.data).toBeDefined()
@@ -100,6 +100,77 @@ describe("ContentEndpoints", () => {
         const getConent = await content.getContent(contentRes.data?.id as string)
         
         console.log(getConent)
+
+    })
+
+    it("test send papermail", async () => {
+
+          const req = await auth.login({
+            key: key,
+            secret: secret
+        })
+        // assert that the response is a success
+        expect(req.isSuccess).toBe(true)
+        expect(req.data).toBeDefined()
+        expect(req.data?.access_token).toBeDefined()
+
+        // read file and convert to base64
+        
+        const contentPath = "test/docs/welcome.pdf"
+        const contentBuffer = fs.readFileSync(contentPath)
+        const contentBase64 = contentBuffer.toString("base64")
+
+
+        // check if receiver exists
+        const firstName = process.env.TEST_RECEIVER_FIRST_NAME as string
+        const lastName = process.env.TEST_RECEIVER_LAST_NAME as string
+        const dateOfBirth = process.env.TEST_RECEIVER_DATE_OF_BIRTH as string
+        const placeOfBirth = process.env.TEST_RECEIVER_PLACE_OF_BIRTH as string
+        const receiver = {
+            first_name: firstName + " non existing",
+            last_name: lastName + " non existing",
+            date_of_birth: dateOfBirth,
+            place_of_birth: placeOfBirth
+        }        
+        const receiverCheck = await content.checkReceiver({
+            birth_information: receiver
+        })
+
+        expect(receiverCheck.isSuccess).toBe(false)
+
+        const contentRes = await content.sendContent(tenantId, {
+            to: {
+                birth_information: receiver
+            },
+            body: [
+                {
+                    type: "application/pdf",
+                    content: contentBase64
+                }
+            ],
+            // epost goes here
+            fallback: {
+                enabled_physical_delivery: true,
+                paper_mail: {
+                    recipient: {
+                        address_line1: "Teststraße 1",
+                        address_line2: "c/o Test",
+                        address_line3: "Test GmbH",
+                        postal_code: "12345",
+                        city: "Teststadt",
+                        country: "DE"
+                    },
+                    test_mode: {
+                        email: "marvin.fischer@brifle.de",
+                        enabled: true
+                    }
+                }
+            },
+            subject: "Test JS SDK",
+            type: "letter",            
+        })
+
+        assert(contentRes.isSuccess)
 
     })
 }

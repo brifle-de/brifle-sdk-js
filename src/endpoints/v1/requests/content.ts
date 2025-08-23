@@ -44,6 +44,7 @@ interface SendContentRequest {
         // base64 encoded string
         content: string
     }[]
+    fallback?: FallbackOptions,
     payment_info?: {
        details?: PaymentDetails
        // sets to true if enable integrated payment
@@ -58,4 +59,22 @@ interface SendContentRequest {
     }        
 }
 
-export type {SendContentRequest, ReceiverRequest, BirthInformation, PaymentDetails}
+interface FallbackOptions {
+    enabled_physical_delivery: boolean
+    paper_mail: {        
+        recipient: {
+            address_line1: string
+            address_line2?: string
+            address_line3?: string
+            postal_code: string
+            city: string
+            country: string
+        }
+        test_mode: {
+            email: string
+            enabled: boolean
+        }
+    }
+}
+
+export type {SendContentRequest, ReceiverRequest, BirthInformation, PaymentDetails, FallbackOptions}

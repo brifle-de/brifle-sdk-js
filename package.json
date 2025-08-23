@@ -1,6 +1,6 @@
 {
   "name": "@brifle/brifle-sdk",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "description": "The JavaScript SDK to interact with the API of Brifle",
   "files": [
     "dist",
@@ -21,6 +21,7 @@
   "scripts": {
     "test": "jest --setupFiles dotenv/config",
     "test-jest": "jest",
+    "test-only": "jest",
     "rollup": "tsc --project tsconfig.types.json && rollup -c",
     "build": "tsc",
     "publish": "npm run rollup && npm publish --access public"
