@@ -29,7 +29,7 @@ describe("ContentEndpoints", () => {
         const dateOfBirth = process.env.TEST_RECEIVER_DATE_OF_BIRTH as string
         const placeOfBirth = process.env.TEST_RECEIVER_PLACE_OF_BIRTH as string
         const receiver = {
-            first_name: firstName,
+            given_names: firstName,
             last_name: lastName,
             date_of_birth: dateOfBirth,
             place_of_birth: placeOfBirth
@@ -68,7 +68,7 @@ describe("ContentEndpoints", () => {
         const dateOfBirth = process.env.TEST_RECEIVER_DATE_OF_BIRTH as string
         const placeOfBirth = process.env.TEST_RECEIVER_PLACE_OF_BIRTH as string
         const receiver = {
-            first_name: firstName,
+            given_names: firstName,
             last_name: lastName,
             date_of_birth: dateOfBirth,
             place_of_birth: placeOfBirth
@@ -101,6 +101,24 @@ describe("ContentEndpoints", () => {
         
         console.log(getConent)
 
+    })
+
+    it("test list cover letters", async () => {
+
+        const req = await auth.login({
+            key: key,
+            secret: secret
+        })
+        // assert that the response is a success
+        expect(req.isSuccess).toBe(true)
+        expect(req.data).toBeDefined()
+        expect(req.data?.access_token).toBeDefined()
+        const coverLetters = await content.listCoverLetters(tenantId)        
+
+        expect(coverLetters.isSuccess).toBe(true)
+        expect(coverLetters.data).toBeDefined()
+        expect(coverLetters.data?.cover_letters).toBeDefined()
+        expect(coverLetters.data?.cover_letters.length).toBeGreaterThan(0)
     })
 
     it("test send papermail", async () => {

@@ -9,6 +9,19 @@ interface ReceiverRequest {
     last_name?: string
     full_name?: string
     date_of_birth?: string
+    postal_address?: PostalAddress
+}
+
+interface PostalAddress {
+    city: string
+    country: string
+    date_of_birth?: string
+    first_name: string
+    house_number: string
+    last_name: string,
+    postcode: string
+    street: string
+
 }
 
 interface BirthInformation {
@@ -18,7 +31,7 @@ interface BirthInformation {
     nationality?: string
     given_names?: string
     last_name?: string
-    postaL_address?: string    
+    postal_address?: string    
 }
 
 

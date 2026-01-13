@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios"
 import { ApiResponse } from "./apiResponse"
-import { CheckReceiverResponse, ContentActionsResponse, ContentResponse, SendContentResponse } from "./responses/content"
+import { CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewResponse, SendContentResponse } from "./responses/content"
 import { ApiV1, ApiV1State } from "../../api/api"
 import { ReceiverRequest, SendContentRequest } from "./requests/content"
 
@@ -103,6 +103,48 @@ class ContentEndpoints {
             return ApiResponse.errorAxios(error)
         })
     }
+
+    /**
+     * list all cover letters for a tenant
+     * @param tenantId - The tenant id
+     * @returns 
+     */
+    public listCoverLetters(tenantId: string): Promise<ApiResponse<CoverLetterOverviewResponse>> {
+        const path = this.getPath(`cover_letters/${tenantId}/list`)
+        return axios.get<CoverLetterOverviewResponse>(path, {
+            headers: {
+                "Authorization": `Bearer ${this.state.auth_token}`
+            }
+        })
+        .then((response) => {
+            return ApiResponse.success(response.data)
+        })
+        .catch((error : AxiosError) => {
+            return ApiResponse.errorAxios(error)
+        })
+    }
+
+    /**
+     * get the content of a cover letter
+     * @param tenantId - The tenant id
+     * @param type - The type of the cover letter (custom | default)
+     * @param name - The name of the cover letter
+     * @param encoding - The encoding of the cover letter (base64 | pdf)
+     * @returns 
+     */
+    public getCoverLetterContent(tenantId: string, type: 'custom' | 'default', name: string, encoding: 'base64' | 'pdf'){
+        const path = this.getPath(`cover_letter/${tenantId}/${type}/${name}/${encoding}`)
+        return axios.get<Blob>(path, {
+            headers: {
+                "Authorization": `Bearer ${this.state.auth_token}`
+            },
+            responseType: 'blob'
+        })
+    }
+
+
+
+
 }
 
 export {

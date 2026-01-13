@@ -46,6 +46,17 @@ interface ContentActionsPaymentResponse {
     link: string
 }
 
+interface CoverLetterOverviewItem {
+    type: string;
+    name: string;
+    display_name: string;
+}
+
+interface CoverLetterOverviewResponse {
+    cover_letters: CoverLetterOverviewItem[];
+}
+
+
 interface EmbbededSignatureResponse {
     id: string
     created_by: string
@@ -79,4 +90,8 @@ interface ContentActionsResponse {
 }
 
 
-export type {EmbbededSignatureResponse, Content, ContentActionsSignatureResponse, ContentActionsPaymentResponse, SendContentResponse, CheckReceiverResponse, ContentMeta, ContentResponse, ContentActionsResponse}
+export type {EmbbededSignatureResponse, Content, 
+CoverLetterOverviewResponse, CoverLetterOverviewItem,
+    ContentActionsSignatureResponse, ContentActionsPaymentResponse, 
+    SendContentResponse, CheckReceiverResponse, ContentMeta,
+     ContentResponse, ContentActionsResponse}
