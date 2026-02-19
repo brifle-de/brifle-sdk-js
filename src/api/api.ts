@@ -5,6 +5,7 @@ import { MailboxEndpoints } from "../endpoints/v1/mailbox"
 import { TenantsEndpoints } from "../endpoints/v1/tenant"
 import { AccountsEndpoints } from "../endpoints/v1/accounts"
 import { StatusEndpoint } from "../endpoints/v1/status"
+import { AddressEndpoint } from "../endpoints/v1/address"
 
 enum ENDPOINTS {
     SANDBOX = "https://sandbox-api.brifle.de",
@@ -87,6 +88,14 @@ class ApiV1 {
      */
     public status(): StatusEndpoint {
         return new StatusEndpoint(this)
+    }
+
+    /**
+     * gets an instance of the AddressEndpoint
+     * @returns AddressEndpoint
+     */
+    public address(): AddressEndpoint {
+        return new AddressEndpoint(this)
     }
 
 }

@@ -52,12 +52,14 @@ interface SendContentRequest {
     to: ReceiverRequest
     type: 'letter' | 'invoice' | 'contract'
     subject: string
+    delivery_certificate?: 'none' | 'aes'
     body: {
         type: 'application/pdf'
         // base64 encoded string
         content: string
     }[]
     fallback?: FallbackOptions,
+    wallet_info?: string[]
     payment_info?: {
        details?: PaymentDetails
        // sets to true if enable integrated payment
@@ -90,4 +92,4 @@ interface FallbackOptions {
     }
 }
 
-export type {SendContentRequest, ReceiverRequest, BirthInformation, PaymentDetails, FallbackOptions}
+export type {SendContentRequest, ReceiverRequest, BirthInformation, PaymentDetails, FallbackOptions, PostalAddress}

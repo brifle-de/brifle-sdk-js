@@ -16,3 +16,7 @@ export * from "./endpoints/v1/tenant";
 export * from "./endpoints/v1/responses/tenant";
 export * from "./endpoints/v1/accounts";
 export * from "./endpoints/v1/responses/accounts";
+export * from "./endpoints/v1/status";
+export * from "./endpoints/v1/address";
+export * from "./endpoints/v1/requests/address";
+export * from "./endpoints/v1/responses/address";

@@ -1,10 +1,14 @@
 interface SendContentResponse{
     id: string
 }
+interface ReceiverCheckElementResponse{
+    type: string
+}
 interface CheckReceiverResponse{
-    receiver: {
-        type: string;
-    }
+    receiver: ReceiverCheckElementResponse
+}
+interface CheckMultipleReceiversResponse{
+    receivers: ReceiverCheckElementResponse[]
 }
 
 interface ContentMeta {
@@ -50,10 +54,54 @@ interface CoverLetterOverviewItem {
     type: string;
     name: string;
     display_name: string;
+    description?: string;
 }
 
 interface CoverLetterOverviewResponse {
     cover_letters: CoverLetterOverviewItem[];
+}
+
+interface DeliveryCertificateResponse {
+    certificate: string
+    meta: {
+        id: string
+        document_id: string
+        type: 'aes'
+    }
+}
+
+interface DeliveryStatusResponse {
+    delivery_mode: string
+    document_id: string
+    tenant_id: string
+    brifle?: DeliveryStatusBrifleResponse
+    physical?: DeliveryStatusPhysicalResponse
+}
+
+interface DeliveryStatusPhysicalResponse {
+    deliverer: 'Deutsche Post'
+    deliverer_prefix: 'dp'
+    document_id: string
+    last_status_check: string
+    errors: DeliveryStatusPhysicalError[]
+    letter_id: string
+    state: 'preprocessing' | 'processing' | 'sent' | 'test_sent' | 'error' | 'unknown'
+}
+
+interface DeliveryStatusBrifleResponse {
+    delivery_date: string
+    read: boolean
+}
+
+interface DeliveryStatusPhysicalError {
+    dp_error_code?: string
+    dp_error_description?: string
+    dp_error_date?: string
+    dp_level?: string
+}
+
+interface DeliveryStatusPhysicalErr {
+    errors: DeliveryStatusPhysicalError[]
 }
 
 
@@ -90,8 +138,21 @@ interface ContentActionsResponse {
 }
 
 
-export type {EmbbededSignatureResponse, Content, 
-CoverLetterOverviewResponse, CoverLetterOverviewItem,
-    ContentActionsSignatureResponse, ContentActionsPaymentResponse, 
-    SendContentResponse, CheckReceiverResponse, ContentMeta,
-     ContentResponse, ContentActionsResponse}
+export type {
+    DeliveryStatusBrifleResponse, 
+    DeliveryStatusPhysicalError, 
+    DeliveryStatusPhysicalErr, 
+    DeliveryStatusPhysicalResponse, 
+    DeliveryStatusResponse, 
+    DeliveryCertificateResponse, 
+    CheckMultipleReceiversResponse, 
+    CheckReceiverResponse,
+    CoverLetterOverviewResponse,
+    CoverLetterOverviewItem,
+    ContentActionsSignatureResponse, 
+    ContentActionsPaymentResponse, 
+    SendContentResponse, 
+    ContentMeta,
+    ContentResponse, 
+    ContentActionsResponse
+}
