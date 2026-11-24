@@ -44,8 +44,39 @@ interface PaymentDetails{
      due_date: string
      // destination account
      iban: string
+     // name of the payment recipient
+     recipient_name: string
      //
      reference: string
+}
+
+interface ContentBody {
+    type: 'application/pdf'
+    // base64 encoded string
+    content: string
+}
+
+interface PreviewCoverLetterRequest {
+    enable: boolean
+    // base64 encoded pdf, only for type 'custom' without name
+    data?: string | undefined
+    name?: string | undefined
+    type: 'default' | 'custom'
+}
+
+interface PreviewToRequest {
+    address_line1: string
+    address_line2?: string
+    address_line3?: string
+    postal_code: string
+    city: string
+    country: string
+}
+
+interface PreviewPaperMailRequest {
+    body: ContentBody[]
+    cover_letter?: PreviewCoverLetterRequest
+    to: PreviewToRequest
 }
 
 interface SendContentRequest {
@@ -53,11 +84,7 @@ interface SendContentRequest {
     type: 'letter' | 'invoice' | 'contract'
     subject: string
     delivery_certificate?: 'none' | 'aes'
-    body: {
-        type: 'application/pdf'
-        // base64 encoded string
-        content: string
-    }[]
+    body: ContentBody[]
     fallback?: FallbackOptions,
     wallet_info?: string[]
     payment_info?: {
@@ -74,22 +101,29 @@ interface SendContentRequest {
     }        
 }
 
-interface FallbackOptions {
-    enabled_physical_delivery: boolean
-    paper_mail: {        
-        recipient: {
-            address_line1: string
-            address_line2?: string
-            address_line3?: string
-            postal_code: string
-            city: string
-            country: string
-        }
-        test_mode: {
-            email: string
-            enabled: boolean
-        }
+interface FallbackPaperMailOptions {
+    cover_letter?: {
+        type: 'default' | 'custom'
+        data?: string
+        name?: string
+    } | undefined
+    recipient: {
+        address_line1: string
+        address_line2?: string
+        address_line3?: string
+        postal_code: string
+        city: string
+        country: string
     }
+    test_mode: {
+        email: string
+        enabled: boolean
+    } | undefined
 }
 
-export type {SendContentRequest, ReceiverRequest, BirthInformation, PaymentDetails, FallbackOptions, PostalAddress}
+interface FallbackOptions {
+    enabled_physical_delivery: boolean
+    paper_mail: FallbackPaperMailOptions
+}
+
+export type {SendContentRequest, ReceiverRequest, BirthInformation, PaymentDetails, FallbackOptions, PostalAddress, ContentBody, PreviewCoverLetterRequest, PreviewToRequest, PreviewPaperMailRequest, FallbackPaperMailOptions}

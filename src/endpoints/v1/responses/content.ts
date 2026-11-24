@@ -1,3 +1,5 @@
+import { ContentBody } from "../requests/content"
+
 interface SendContentResponse{
     id: string
 }
@@ -28,13 +30,8 @@ interface ContentMeta {
 }
 
 interface ContentResponse {
-    content: Content[]
+    content: ContentBody[]
     meta: ContentMeta
-}
-
-interface Content{
-    content: string;
-    type: string;
 }
 
 interface ContentActionsPaymentResponse {
@@ -44,6 +41,7 @@ interface ContentActionsPaymentResponse {
         due_date: string
         market: string
         reference: string
+        recipient_name: string
         iban: string
         tink_payment_id: string
     }
@@ -154,5 +152,6 @@ export type {
     SendContentResponse, 
     ContentMeta,
     ContentResponse, 
-    ContentActionsResponse
+    ContentActionsResponse,
+    EmbbededSignatureResponse,
 }

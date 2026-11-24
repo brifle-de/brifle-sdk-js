@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosResponse } from "axios"
 import { ApiResponse } from "./apiResponse"
 import { CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, DeliveryCertificateResponse, DeliveryStatusResponse, SendContentResponse } from "./responses/content"
 import { ApiV1, ApiV1State } from "../../api/api"
-import { ReceiverRequest, SendContentRequest } from "./requests/content"
+import { PreviewPaperMailRequest, ReceiverRequest, SendContentRequest } from "./requests/content"
 
 class ContentEndpoints {
     private endpoint: string
@@ -252,6 +252,30 @@ class ContentEndpoints {
         .catch((error : AxiosError) => {
             return ApiResponse.errorAxios(error)
         })  
+    }
+
+    /**
+     * gets a preview of a paper mail including the content and the cover letter merged into one pdf
+     * @param tenantId the
+     * @param request the request object to send
+     * @returns the api response containing the preview as a blob if is called in the browser or as an array buffer if is called in node
+     */
+    public getPaperMailPreview(tenantId: string, request: PreviewPaperMailRequest): Promise<ApiResponse<Blob | ArrayBuffer>> {
+        const isBrowser = typeof window !== "undefined" &&
+            typeof window.document !== "undefined"
+        const responseType = isBrowser ? 'blob' : 'arraybuffer'
+        const path = this.getPath(`preview/${tenantId}/paper_mail`)
+        return axios.post(path, request, {
+            headers: {
+                "Authorization": `Bearer ${this.state.auth_token}`
+            },
+            responseType: responseType
+        }).then((response) => {
+            return ApiResponse.success(response.data)
+        })
+        .catch((error : AxiosError) => {
+            return ApiResponse.errorAxios(error)
+        })
     }
 }
 
