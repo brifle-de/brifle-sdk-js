@@ -1,54 +1,59 @@
 import { ApiV1, ApiV1State } from "../../api/api"
 import { ApiResponse } from "./apiResponse"
-import { LoginRequest } from "./requests/authentication"
+import { LoginRequest, LogoutRequest } from "./requests/authentication"
 import { LoginResponse } from "./responses/authentication"
-
-import axios, { AxiosError } from "axios"
+import { authCreate, authRevoke } from "../../generated/sdk.gen"
+import { call, clientFor } from "../../core/transport"
+import type { Client } from "../../generated/client"
 
 class AuthenticationEndpoints {
-    private endpoint: string
-    private readonly VERSION: string = "v1"
-    private state : ApiV1State
+    private readonly client: Client
+    private readonly state: ApiV1State
 
     constructor(api: ApiV1) {
-        this.endpoint = api.endpoint
+        this.client = clientFor(api)
         this.state = api.apiState
-    } 
-
-    /**
-     * builds the full path
-     * @param path - The path to the endpoint, e.g. "authentication/login"
-     * @returns 
-     */
-    private getPath(path: string): string {
-        return `${this.endpoint}/${this.VERSION}/auth/${path}`
     }
 
     /**
-     * login to the API
+     * login to the API. The token is kept on the ApiV1 instance and used by all
+     * its endpoints.
      * @param loginRequest - The login request object
      * @returns the login response object
      */
-    public login(loginRequest: LoginRequest) : Promise<ApiResponse<LoginResponse>> {
-        const path = this.getPath("login")
-        // axios.post(path, loginRequest)
-        return axios.post<LoginResponse>(path, loginRequest)
+    public login(loginRequest: LoginRequest): Promise<ApiResponse<LoginResponse>> {
+        return call(authCreate({ client: this.client, body: loginRequest, throwOnError: true }))
             .then((response) => {
-                return ApiResponse.success(response.data)
-            }).then((response) => {
-                const at = response.data?.access_token 
-                this.state.auth_token = at
-                const expire_in = (response.data?.expires_in?? 0) * 1000
-                const issue_time = new Date(response.data?.created_at?? new Date()).getMilliseconds()                
-                const expires_milli = issue_time + expire_in
-                this.state.auth_token_expire_date = new Date(expires_milli);
-                return response
-            })
-            .catch((error : AxiosError) => {                
-                return ApiResponse.errorAxios(error)
+                const data = response.data as LoginResponse | undefined
+                if (data) {
+                    this.state.auth_token = data.access_token
+                    const issued = Date.parse(data.created_at)
+                    const start = Number.isNaN(issued) ? Date.now() : issued
+                    this.state.auth_token_expire_date = new Date(start + (data.expires_in ?? 0) * 1000)
+                }
+                return response as ApiResponse<LoginResponse>
             })
     }
 
+    /**
+     * revokes a token. Without a request the token of this ApiV1 instance is
+     * revoked and forgotten.
+     * @param logoutRequest - the token to revoke (optional)
+     */
+    public logout(logoutRequest?: LogoutRequest): Promise<ApiResponse<Record<string, unknown>>> {
+        const token = logoutRequest?.token ?? this.state.auth_token
+        if (!token) {
+            return Promise.resolve(ApiResponse.success({}))
+        }
+        return call(authRevoke({ client: this.client, body: { token }, throwOnError: true }))
+            .then((response) => {
+                if (response.isSuccess && token === this.state.auth_token) {
+                    this.state.auth_token = undefined
+                    this.state.auth_token_expire_date = undefined
+                }
+                return response as ApiResponse<Record<string, unknown>>
+            })
+    }
 }
 
 export {

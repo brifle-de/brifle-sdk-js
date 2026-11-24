@@ -3,7 +3,7 @@ import { AuthenticationEndpoints } from "../../../src/endpoints/v1/authenticatio
 
 
 describe("AuthenticationEndpoints", () => {
-    const endpoint = "https://internaltest-api.brifle.de"
+    const endpoint = process.env.API_TEST_ENDPOINT ?? "https://internaltest-api.brifle.de"
     const api = new ApiV1(endpoint).authentication()
 
     const key = process.env.API_TEST_KEY as string

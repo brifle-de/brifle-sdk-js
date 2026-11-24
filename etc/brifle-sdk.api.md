@@ -60,6 +60,7 @@ export class ApiV1 {
     readonly apiState: ApiV1State;
     authentication(): AuthenticationEndpoints;
     content(): ContentEndpoints;
+    contracts(): ContractsEndpoints;
     // (undocumented)
     readonly endpoint: string;
     mailbox(): MailboxEndpoints;
@@ -67,9 +68,11 @@ export class ApiV1 {
     static get production(): ApiV1;
     // (undocumented)
     static get sandbox(): ApiV1;
+    // @deprecated (undocumented)
     signature(): SignaturesEndpoint;
     status(): StatusEndpoint;
     tenants(): TenantsEndpoints;
+    wallet(): WalletEndpoints;
 }
 
 // @public (undocumented)
@@ -84,6 +87,7 @@ export interface ApiV1State {
 export class AuthenticationEndpoints {
     constructor(api: ApiV1);
     login(loginRequest: LoginRequest): Promise<ApiResponse<LoginResponse>>;
+    logout(logoutRequest?: LogoutRequest): Promise<ApiResponse<Record<string, unknown>>>;
 }
 
 // @public (undocumented)
@@ -141,6 +145,9 @@ export interface ContentActionsResponse {
     payments: ContentActionsPaymentResponse;
     // (undocumented)
     signatures: ContentActionsSignatureResponse;
+    wallet?: {
+        items: ContentActionsWalletItem[];
+    } | null;
 }
 
 // @public (undocumented)
@@ -152,8 +159,32 @@ export interface ContentActionsSignatureResponse {
     };
     // (undocumented)
     embedded_signatures: EmbbededSignatureResponse[];
-    // (undocumented)
+    // @deprecated (undocumented)
     signature_reference: string;
+    // (undocumented)
+    signature_reference_info?: SignatureReferenceInfo;
+}
+
+// @public (undocumented)
+export interface ContentActionsWalletItem {
+    // (undocumented)
+    has_owner?: boolean;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    immutable?: boolean;
+    // (undocumented)
+    inserted_at?: string;
+    // (undocumented)
+    issuer?: string;
+    // (undocumented)
+    retention_period_days?: number;
+    // (undocumented)
+    subject?: string;
+    // (undocumented)
+    type?: string;
+    // (undocumented)
+    updated_at?: string;
 }
 
 // @public (undocumented)
@@ -171,8 +202,9 @@ export class ContentEndpoints {
     checkReceiver(receiver: ReceiverRequest): Promise<ApiResponse<CheckReceiverResponse>>;
     createCoverLetter(tenantId: string, name: string, base64Content: string, description?: string): Promise<ApiResponse<CoverLetterOverviewItem>>;
     deleteCoverLetter(tenantId: string, name: string): Promise<ApiResponse<void>>;
-    getContent(documentId: string): Promise<ApiResponse<ContentResponse>>;
+    getContent(documentId: string, options?: GetContentOptions): Promise<ApiResponse<ContentResponse>>;
     getContentActions(documentId: string): Promise<ApiResponse<ContentActionsResponse>>;
+    getCoverLetter(tenantId: string, type: 'custom' | 'default', name: string, format: 'base64' | 'pdf'): Promise<ApiResponse<string | Blob | ArrayBuffer>>;
     getCoverLetterContent(tenantId: string, type: 'custom' | 'default', name: string, encoding: 'base64' | 'pdf'): Promise<AxiosResponse<string | Blob>>;
     getDeliveryCertificate(documentId: string): Promise<ApiResponse<DeliveryCertificateResponse>>;
     getDeliveryStatus(documentId: string): Promise<ApiResponse<DeliveryStatusResponse>>;
@@ -184,27 +216,37 @@ export class ContentEndpoints {
 // @public (undocumented)
 export interface ContentMeta {
     // (undocumented)
+    access_level?: number | null;
+    // (undocumented)
     delivered: boolean;
     // (undocumented)
     delivered_date: string;
+    hide_read?: boolean;
+    id?: string;
+    payable?: boolean;
     // (undocumented)
     read: boolean;
     // (undocumented)
     read_date: string;
     // (undocumented)
     receiver?: string;
+    receiver_identifier?: string | null;
     // (undocumented)
-    receiver_state?: 'unread' | 'read' | 'archived' | 'trashed' | 'deleted' | 'pending';
+    receiver_state?: 'unread' | 'read' | 'archived' | 'trashed' | 'deleted' | 'pending' | 'registering' | 'physical';
+    reference_number?: string | null;
     // (undocumented)
     sender?: string;
-    // (undocumented)
-    sender_state?: 'activate' | 'activated' | 'trashed' | 'deleted' | 'pending';
+    sender_state?: 'active' | 'activate' | 'activated' | 'trashed' | 'deleted' | 'pending';
+    sender_user?: string | null;
     // (undocumented)
     sent_date: string;
+    // (undocumented)
+    signature_reference?: string | null;
     // (undocumented)
     size: number;
     // (undocumented)
     size_responsive?: number;
+    sub_mailbox?: string | null;
     // (undocumented)
     subject: string;
     // (undocumented)
@@ -220,11 +262,187 @@ export interface ContentResponse {
 }
 
 // @public (undocumented)
+export interface ContractDocumentInfo {
+    // (undocumented)
+    current_sha256?: string;
+    // (undocumented)
+    mime_type?: string;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    original_sha256?: string;
+    // (undocumented)
+    size?: number;
+}
+
+// @public (undocumented)
+export interface ContractEvent {
+    // (undocumented)
+    actor_type?: 'user' | 'api_key' | 'system';
+    // (undocumented)
+    at: string;
+    // (undocumented)
+    data?: Record<string, unknown>;
+    // (undocumented)
+    event: 'created' | 'stage_opened' | 'signer_key_required' | 'signer_key_available' | 'signing_prepared' | 'signing_failed' | 'signed' | 'rejected' | 'cancelled' | 'expired' | 'completed';
+    // (undocumented)
+    signer_id?: string | null;
+}
+
+// @public (undocumented)
+export interface ContractEventsResponse {
+    // (undocumented)
+    events: ContractEvent[];
+}
+
+// @public (undocumented)
+export interface ContractListResponse {
+    // (undocumented)
+    contracts: ContractResponse[];
+    // (undocumented)
+    total: number;
+}
+
+// @public (undocumented)
+export interface ContractResponse {
+    // (undocumented)
+    completed_at?: string | null;
+    // (undocumented)
+    created_at: string;
+    // (undocumented)
+    current_stage?: number;
+    // (undocumented)
+    document?: ContractDocumentInfo;
+    // (undocumented)
+    expires_at?: string;
+    // (undocumented)
+    external_reference?: string | null;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    message?: string | null;
+    // (undocumented)
+    required_level: string;
+    // (undocumented)
+    revision?: number;
+    // (undocumented)
+    signature_format: 'pades' | 'xades_enveloped' | 'xades_detached';
+    // (undocumented)
+    signature_profile?: 'B-B' | 'B-T';
+    // (undocumented)
+    signers: ContractSigner[];
+    // (undocumented)
+    signing_order: 'sequential' | 'parallel';
+    // (undocumented)
+    status: ContractStatus;
+    // (undocumented)
+    tenant_id: string;
+    // (undocumented)
+    title: string;
+}
+
+// @public
+export class ContractsEndpoints {
+    constructor(api: ApiV1);
+    cancel(tenantId: string, contractId: string): Promise<ApiResponse<ContractResponse>>;
+    create(tenantId: string, request: CreateContractRequest): Promise<ApiResponse<ContractResponse>>;
+    get(tenantId: string, contractId: string): Promise<ApiResponse<ContractResponse>>;
+    getDocument(tenantId: string, contractId: string, revision?: 'current' | 'original'): Promise<ApiResponse<Blob | ArrayBuffer>>;
+    getEvents(tenantId: string, contractId: string): Promise<ApiResponse<ContractEventsResponse>>;
+    getSignature(tenantId: string, contractId: string, signerId: string): Promise<ApiResponse<string>>;
+    list(tenantId: string, options?: ListContractsOptions): Promise<ApiResponse<ContractListResponse>>;
+    listSignatures(tenantId: string, contractId: string): Promise<ApiResponse<ContractSignaturesResponse>>;
+}
+
+// @public
+export interface ContractSignatureField {
+    // (undocumented)
+    height: number;
+    // (undocumented)
+    page: number;
+    // (undocumented)
+    width: number;
+    // (undocumented)
+    x: number;
+    // (undocumented)
+    y: number;
+}
+
+// @public (undocumented)
+export interface ContractSignatureInfo {
+    // (undocumented)
+    revision?: number;
+    // (undocumented)
+    sha256?: string;
+    // (undocumented)
+    signer_id: string;
+    // (undocumented)
+    size?: number;
+}
+
+// @public (undocumented)
+export interface ContractSignaturesResponse {
+    // (undocumented)
+    signatures: ContractSignatureInfo[];
+}
+
+// @public (undocumented)
+export interface ContractSigner {
+    // (undocumented)
+    certificate_sha256?: string | null;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    key_assurance?: string | null;
+    // (undocumented)
+    key_state?: 'unknown' | 'available' | 'missing';
+    // (undocumented)
+    name?: string | null;
+    // (undocumented)
+    opened_at?: string | null;
+    // (undocumented)
+    position?: number;
+    // (undocumented)
+    reject_reason?: string | null;
+    // (undocumented)
+    rejected_at?: string | null;
+    // (undocumented)
+    role?: string | null;
+    // (undocumented)
+    signature_field?: Partial<ContractSignatureField> | null;
+    // (undocumented)
+    signature_level?: string | null;
+    // (undocumented)
+    signed_at?: string | null;
+    // (undocumented)
+    stage?: number;
+    // (undocumented)
+    status: ContractSignerStatus;
+}
+
+// @public (undocumented)
+export interface ContractSignerRequest {
+    order?: number;
+    // (undocumented)
+    role?: string | null;
+    // (undocumented)
+    signature_field?: ContractSignatureField | null;
+    to: ReceiverRequest;
+}
+
+// @public (undocumented)
+export type ContractSignerStatus = 'waiting' | 'pending' | 'awaiting_key' | 'signing' | 'signed' | 'rejected' | 'closed';
+
+// @public (undocumented)
+export type ContractStatus = 'pending' | 'completed' | 'rejected' | 'cancelled' | 'expired';
+
+// @public (undocumented)
 export interface CoverLetterOverviewItem {
     // (undocumented)
     description?: string;
     // (undocumented)
     display_name: string;
+    id?: string;
     // (undocumented)
     name: string;
     // (undocumented)
@@ -235,6 +453,32 @@ export interface CoverLetterOverviewItem {
 export interface CoverLetterOverviewResponse {
     // (undocumented)
     cover_letters: CoverLetterOverviewItem[];
+}
+
+// @public (undocumented)
+export interface CreateContractRequest {
+    // (undocumented)
+    document: {
+        content: string;
+        file_name: string;
+        mime_type?: string;
+    };
+    expires_at?: string | null;
+    // (undocumented)
+    external_reference?: string | null;
+    idempotency_key?: string | null;
+    // (undocumented)
+    message?: string | null;
+    // (undocumented)
+    required_level: 'm-ses' | 'm-aes';
+    // (undocumented)
+    signature_format: 'pades' | 'xades_enveloped' | 'xades_detached';
+    // (undocumented)
+    signers: ContractSignerRequest[];
+    // (undocumented)
+    signing_order?: 'sequential' | 'parallel';
+    // (undocumented)
+    title: string;
 }
 
 // @public (undocumented)
@@ -262,6 +506,37 @@ export interface CreateSignatureReferenceResponse {
 }
 
 // @public (undocumented)
+export interface CreateWalletItemRequest {
+    // (undocumented)
+    data: {
+        elements: WalletDataElement[];
+    };
+    expires_at?: string | null;
+    // (undocumented)
+    export_wallet?: {
+        apple_wallet?: boolean;
+        google_wallet?: boolean;
+    };
+    // (undocumented)
+    immutable?: boolean;
+    not_before?: string | null;
+    // (undocumented)
+    retention_period_days?: number;
+    // (undocumented)
+    styles?: WalletStyle;
+    // (undocumented)
+    subject: string;
+    // (undocumented)
+    type: 'proof_of_ownership' | 'proof_of_permission';
+}
+
+// @public (undocumented)
+export interface DeleteResponse {
+    // (undocumented)
+    status: string;
+}
+
+// @public (undocumented)
 export interface DeliveryCertificateResponse {
     // (undocumented)
     certificate: string;
@@ -276,6 +551,8 @@ export interface DeliveryCertificateResponse {
 // @public (undocumented)
 export interface DeliveryStatusBrifleResponse {
     // (undocumented)
+    delivered_date?: string;
+    // @deprecated (undocumented)
     delivery_date: string;
     // (undocumented)
     read: boolean;
@@ -323,6 +600,8 @@ export interface DeliveryStatusResponse {
     brifle?: DeliveryStatusBrifleResponse;
     // (undocumented)
     delivery_mode: string;
+    // @deprecated (undocumented)
+    delivery_status?: Omit<DeliveryStatusResponse, 'delivery_status'>;
     // (undocumented)
     document_id: string;
     // (undocumented)
@@ -408,6 +687,11 @@ export interface FallbackPaperMailOptions {
 }
 
 // @public (undocumented)
+export interface GetContentOptions {
+    read?: boolean;
+}
+
+// @public (undocumented)
 export interface InboxFilter {
     // (undocumented)
     state?: Array<'read' | 'unread' | 'trashed'>;
@@ -420,9 +704,20 @@ export interface InboxFilter {
 }
 
 // @public (undocumented)
+export interface ListContractsOptions {
+    // (undocumented)
+    page?: number;
+    // (undocumented)
+    page_size?: number;
+    // (undocumented)
+    status?: 'pending' | 'completed' | 'rejected' | 'cancelled' | 'expired';
+}
+
+// @public (undocumented)
 export interface LoginRequest {
     // (undocumented)
     key: string;
+    scopes?: string;
     // (undocumented)
     secret: string;
 }
@@ -453,8 +748,7 @@ export interface LogoutRequest {
 export class MailboxEndpoints {
     constructor(api: ApiV1);
     getInbox(filter: InboxFilter, page?: number): Promise<ApiResponse<MailboxResponse>>;
-    // (undocumented)
-    getOutbox(tenant: string, filter: OutboxFilter, page?: number): Promise<ApiResponse<MailboxResponse>>;
+    getOutbox(tenant: string, filter: OutboxFilter, page?: number, options?: OutboxOptions): Promise<ApiResponse<MailboxResponse>>;
 }
 
 // @public (undocumented)
@@ -473,6 +767,7 @@ export interface Meta {
     delivered_date: string;
     // (undocumented)
     id: string;
+    payable?: boolean;
     // (undocumented)
     read: boolean;
     // (undocumented)
@@ -481,6 +776,7 @@ export interface Meta {
     receiver: string;
     // (undocumented)
     receiver_state?: string;
+    reference_number?: string;
     // (undocumented)
     sender: string;
     // (undocumented)
@@ -488,9 +784,12 @@ export interface Meta {
     // (undocumented)
     sent_date: string;
     // (undocumented)
+    signature_reference?: string;
+    // (undocumented)
     size: number;
     // (undocumented)
     size_responsive?: number;
+    sub_mailbox?: string;
     // (undocumented)
     subject: string;
     // (undocumented)
@@ -505,6 +804,11 @@ export interface OutboxFilter {
     subject?: string;
     // (undocumented)
     type?: 'letter' | 'invoice' | 'contract';
+}
+
+// @public (undocumented)
+export interface OutboxOptions {
+    sender_user?: string;
 }
 
 // @public (undocumented)
@@ -615,12 +919,13 @@ export interface ReceiverRequest {
     last_name?: string;
     // (undocumented)
     postal_address?: PostalAddress;
-    // (undocumented)
+    // @deprecated (undocumented)
     ssn?: string;
     // (undocumented)
     tel?: string;
-    // (undocumented)
+    // @deprecated (undocumented)
     vad_id?: string;
+    vat_id?: string;
 }
 
 // @public (undocumented)
@@ -628,7 +933,7 @@ export interface SendContentRequest {
     // (undocumented)
     body: ContentBody[];
     // (undocumented)
-    delivery_certificate?: 'none' | 'aes';
+    delivery_certificate?: 'none' | 'aes' | 'qes';
     // (undocumented)
     fallback?: FallbackOptions;
     // (undocumented)
@@ -650,8 +955,7 @@ export interface SendContentRequest {
     to: ReceiverRequest;
     // (undocumented)
     type: 'letter' | 'invoice' | 'contract';
-    // (undocumented)
-    wallet_info?: string[];
+    wallet_info?: string[] | WalletInfo;
 }
 
 // @public (undocumented)
@@ -661,19 +965,42 @@ export interface SendContentResponse {
 }
 
 // @public (undocumented)
+export interface SignatureReferenceInfo {
+    // (undocumented)
+    document_signatures?: unknown;
+    // (undocumented)
+    managed_by?: string;
+    // (undocumented)
+    signature_fields?: unknown;
+}
+
+// @public @deprecated (undocumented)
 export class SignaturesEndpoint {
     constructor(api: ApiV1);
+    // @deprecated
     createSignatureReference(tenantId: string, request: CreateSignatureReferenceRequest): Promise<ApiResponse<CreateSignatureReferenceResponse>>;
+    // @deprecated
     exportSignature(signatureId: string, format: 'xml'): Promise<ApiResponse<any>>;
 }
 
 // @public (undocumented)
 export class StatusEndpoint {
     constructor(api: ApiV1);
-    // Warning: (ae-forgotten-export) The symbol "StatusResponse" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
     getStatus(): Promise<ApiResponse<StatusResponse>>;
+}
+
+// @public (undocumented)
+export interface StatusResponse {
+    // (undocumented)
+    features: string[];
+    // (undocumented)
+    service: string;
+    // (undocumented)
+    status: string;
+    // (undocumented)
+    timestamp: string;
+    // (undocumented)
+    version: string;
 }
 
 // @public (undocumented)
@@ -703,6 +1030,92 @@ export interface TenantsResponse {
     tenants: Tenant[];
     // (undocumented)
     total: number;
+}
+
+// @public (undocumented)
+export interface WalletDataElement {
+    // (undocumented)
+    name?: string;
+    reference_id?: string;
+    // (undocumented)
+    type?: 'text' | 'url' | 'jwt';
+    // (undocumented)
+    value?: string;
+}
+
+// @public
+export class WalletEndpoints {
+    constructor(api: ApiV1);
+    createItem(tenantId: string, request: CreateWalletItemRequest): Promise<ApiResponse<WalletItemMeta>>;
+    getItem(tenantId: string, itemId: string): Promise<ApiResponse<WalletItemResponse>>;
+    revokeItem(tenantId: string, itemId: string): Promise<ApiResponse<DeleteResponse>>;
+}
+
+// @public (undocumented)
+export interface WalletInfo {
+    // (undocumented)
+    items: {
+        item_id: string;
+    }[];
+}
+
+// @public (undocumented)
+export interface WalletItemMeta {
+    // (undocumented)
+    has_owner?: boolean;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    immutable?: boolean;
+    // (undocumented)
+    inserted_at?: string;
+    // (undocumented)
+    issuer?: string;
+    // (undocumented)
+    retention_period_days?: number;
+    // (undocumented)
+    subject: string;
+    // (undocumented)
+    type: string;
+    // (undocumented)
+    updated_at?: string;
+}
+
+// @public (undocumented)
+export interface WalletItemResponse {
+    // (undocumented)
+    data: {
+        elements: {
+            name?: string;
+            type?: string;
+            value?: string;
+        }[];
+    };
+    // (undocumented)
+    meta: WalletItemMeta;
+}
+
+// @public (undocumented)
+export interface WalletStyle {
+    // (undocumented)
+    background_color?: string;
+    // (undocumented)
+    on_background_color?: string;
+    // (undocumented)
+    on_primary_color?: string;
+    // (undocumented)
+    on_secondary_color?: string;
+    // (undocumented)
+    primary_color?: string;
+    // (undocumented)
+    primary_qr_code_data?: string;
+    // (undocumented)
+    rows?: {
+        left: string;
+        right: string;
+    }[];
+    // (undocumented)
+    secondary_color?: string;
 }
 
 // (No @packageDocumentation comment for this package)

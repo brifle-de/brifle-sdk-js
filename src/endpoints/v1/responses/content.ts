@@ -14,19 +14,36 @@ interface CheckMultipleReceiversResponse{
 }
 
 interface ContentMeta {
+    /** id of the document */
+    id?: string
     delivered: boolean
     delivered_date: string
     read: boolean
     read_date: string
     receiver?: string
     sender?: string
-    receiver_state?: 'unread' | 'read' | 'archived' | 'trashed' | 'deleted' | 'pending'
-    sender_state?: 'activate' | 'activated' | 'trashed' | 'deleted' | 'pending'
+    receiver_state?: 'unread' | 'read' | 'archived' | 'trashed' | 'deleted' | 'pending' | 'registering' | 'physical'
+    /** `active` is what the API returns; `activate`/`activated` are kept for compatibility */
+    sender_state?: 'active' | 'activate' | 'activated' | 'trashed' | 'deleted' | 'pending'
     sent_date: string
     size: number
     subject: string
     type: string
     size_responsive?: number
+    /** the user of the tenant who sent the document */
+    sender_user?: string | null
+    /** the identifier the receiver was addressed with; only returned to the receiver */
+    receiver_identifier?: string | null
+    /** postal department the document is stored in; only returned to the receiver */
+    sub_mailbox?: string | null
+    /** groups related documents */
+    reference_number?: string | null
+    /** the read receipt is hidden from the sender */
+    hide_read?: boolean
+    access_level?: number | null
+    /** the document has a payment attached */
+    payable?: boolean
+    signature_reference?: string | null
 }
 
 interface ContentResponse {
@@ -49,6 +66,8 @@ interface ContentActionsPaymentResponse {
 }
 
 interface CoverLetterOverviewItem {
+    /** set on the item returned by `createCoverLetter` */
+    id?: string;
     type: string;
     name: string;
     display_name: string;
@@ -74,6 +93,11 @@ interface DeliveryStatusResponse {
     tenant_id: string
     brifle?: DeliveryStatusBrifleResponse
     physical?: DeliveryStatusPhysicalResponse
+    /**
+     * @deprecated the API wraps the status in `delivery_status`; since 0.4 the SDK
+     * also returns its fields at the top level. Read those instead.
+     */
+    delivery_status?: Omit<DeliveryStatusResponse, 'delivery_status'>
 }
 
 interface DeliveryStatusPhysicalResponse {
@@ -87,7 +111,9 @@ interface DeliveryStatusPhysicalResponse {
 }
 
 interface DeliveryStatusBrifleResponse {
+    /** @deprecated same value as `delivered_date` (the name the API uses) */
     delivery_date: string
+    delivered_date?: string
     read: boolean
 }
 
@@ -121,18 +147,43 @@ interface EmbbededSignatureResponse {
     status: 'pending' | 'signed' | 'rejected' 
 }
 
+interface SignatureReferenceInfo {
+    managed_by?: string
+    signature_fields?: unknown
+    document_signatures?: unknown
+}
+
 interface ContentActionsSignatureResponse {
     document_signatures: {
         signature_ids: string[]
         signature_reference: string
     }
     embedded_signatures: EmbbededSignatureResponse[]
+    /**
+     * @deprecated the API returns an object here, not a string. Use
+     * `signature_reference_info`, which has the same value with its real type.
+     */
     signature_reference: string
+    signature_reference_info?: SignatureReferenceInfo
+}
+
+interface ContentActionsWalletItem {
+    id?: string
+    type?: string
+    subject?: string
+    issuer?: string
+    has_owner?: boolean
+    immutable?: boolean
+    retention_period_days?: number
+    inserted_at?: string
+    updated_at?: string
 }
 
 interface ContentActionsResponse {
     payments: ContentActionsPaymentResponse
     signatures: ContentActionsSignatureResponse
+    /** wallet items attached to the document, null if there are none */
+    wallet?: { items: ContentActionsWalletItem[] } | null
 }
 
 
@@ -154,4 +205,6 @@ export type {
     ContentResponse, 
     ContentActionsResponse,
     EmbbededSignatureResponse,
+    SignatureReferenceInfo,
+    ContentActionsWalletItem,
 }

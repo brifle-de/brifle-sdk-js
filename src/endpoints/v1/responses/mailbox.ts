@@ -18,6 +18,13 @@ interface Meta {
     sender_state?: string,
     receiver_state?: string,
     size_responsive?: number,
+    /** the document has a payment attached */
+    payable?: boolean,
+    /** groups related documents */
+    reference_number?: string,
+    /** postal department the document is stored in */
+    sub_mailbox?: string,
+    signature_reference?: string,
 }
 
 export type { MailboxResponse, Meta };

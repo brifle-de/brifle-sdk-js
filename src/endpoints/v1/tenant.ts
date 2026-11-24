@@ -1,59 +1,30 @@
-import axios, { AxiosError } from "axios"
-import { ApiV1, ApiV1State } from "../../api/api"
-import { Tenant, TenantsResponse } from "./responses/tenant"
+import { ApiV1 } from "../../api/api"
 import { ApiResponse } from "./apiResponse"
+import { Tenant, TenantsResponse } from "./responses/tenant"
+import { tenantGetOwn, tenantGetTenant } from "../../generated/sdk.gen"
+import { call, clientFor } from "../../core/transport"
+import type { Client } from "../../generated/client"
 
 class TenantsEndpoints {
-    private endpoint: string
-    private readonly VERSION: string = "v1"
-    private state : ApiV1State
+    private readonly client: Client
 
     constructor(api: ApiV1) {
-        this.endpoint = api.endpoint
-        this.state = api.apiState     
-    } 
-
-    private getPath(path: string): string {
-        return `${this.endpoint}/${this.VERSION}/tenants/${path}`
+        this.client = clientFor(api)
     }
 
     /**
-     * Gets a tenant by its ID
+     * get a tenant by its id
+     * @param tenantId - the id of the tenant
      */
-    public getById(tenantId: string): Promise<ApiResponse<Tenant>>{
-        const path = this.getPath(`id/${tenantId}`)
-        
-        return axios.get<Tenant>(path, {
-            headers: {
-                "Authorization": `Bearer ${this.state.auth_token}`,
-                "Content-Type": "application/json"
-            }
-        })
-            .then((response) => {
-                return ApiResponse.success(response.data)
-            })
-            .catch((error : AxiosError) => {                
-                return ApiResponse.errorAxios(error)
-            })            
+    public getById(tenantId: string): Promise<ApiResponse<Tenant>> {
+        return call(tenantGetTenant({ client: this.client, path: { id: tenantId }, throwOnError: true })) as Promise<ApiResponse<Tenant>>
     }
 
     /**
-     * Gets all tenants owned by the account id
+     * get the tenants of the logged in api key
      */
-    public getMy(): Promise<ApiResponse<TenantsResponse>>{
-        const path = this.getPath(`my`)       
-        return axios.get<TenantsResponse>(path,{
-            headers: {
-                "Authorization": `Bearer ${this.state.auth_token}`,
-                "Content-Type": "application/json"
-            }
-        })
-            .then((response) => {
-                return ApiResponse.success(response.data)
-            })
-            .catch((error : AxiosError) => {                
-                return ApiResponse.errorAxios(error)
-            })     
+    public getMy(): Promise<ApiResponse<TenantsResponse>> {
+        return call(tenantGetOwn({ client: this.client, throwOnError: true })) as Promise<ApiResponse<TenantsResponse>>
     }
 }
 

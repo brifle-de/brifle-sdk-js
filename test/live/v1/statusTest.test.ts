@@ -2,7 +2,7 @@
 import { ApiV1 } from "../../../src/api/api";
 
 describe("StatusEndpoints", () => {
-    const endpoint = "https://internaltest-api.brifle.de"
+    const endpoint = process.env.API_TEST_ENDPOINT ?? "https://internaltest-api.brifle.de"
     const api = new ApiV1(endpoint);
     const status = api.status();
 

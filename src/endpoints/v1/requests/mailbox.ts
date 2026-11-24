@@ -12,4 +12,9 @@ interface OutboxFilter {
     type?: 'letter' | 'invoice' | 'contract'
 } 
 
-export type { InboxFilter, OutboxFilter };
+interface OutboxOptions {
+    /** only documents sent by this user of the tenant */
+    sender_user?: string
+}
+
+export type { InboxFilter, OutboxFilter, OutboxOptions };

@@ -1,0 +1,51 @@
+name: CI
+
+# Tests on every pull request and every push outside release/**. Release
+# branches run the same job as the gate in release-candidate.yml.
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - 'release/**'
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # src/generated must be exactly what openapi/api.json generates: the
+      # low-level client is never edited by hand.
+      - name: Generated client matches openapi/api.json
+        run: |
+          npm run generate
+          if ! git diff --quiet -- src/generated || [[ -n "$(git ls-files --others --exclude-standard -- src/generated)" ]]; then
+            git status --short -- src/generated
+            echo "::error::src/generated is out of date. Run 'npm run generate' and commit the result."
+            exit 1
+          fi
+
+      # Compile, plus the compatibility (0.3.3 baseline) and spec drift checks.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      # Fails when the public API changed without an updated etc/brifle-sdk.api.md.
+      - name: Public API report
+        run: npm run api:check
+
+      - name: Package
+        run: npm pack --dry-run

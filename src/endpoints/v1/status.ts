@@ -1,38 +1,23 @@
-import axios, { AxiosError } from "axios"
-import { ApiV1, ApiV1State } from "../../api/api"
+import { ApiV1 } from "../../api/api"
 import { ApiResponse } from "./apiResponse"
 import { StatusResponse } from "./responses/status"
-
+import { statusGetStatus } from "../../generated/sdk.gen"
+import { call, clientFor } from "../../core/transport"
+import type { Client } from "../../generated/client"
 
 class StatusEndpoint {
-    private endpoint: string
-    private readonly VERSION: string = "v1"
-    private state : ApiV1State
+    private readonly client: Client
 
     constructor(api: ApiV1) {
-            this.endpoint = api.endpoint
-            this.state = api.apiState     
-    } 
-
-    private getPath(path: string): string {
-        return `${this.endpoint}/${this.VERSION}/status/${path}`
+        this.client = clientFor(api)
     }
 
     /**
-     * 
-     * @returns the 
+     * get the status of the API (no login needed)
      */
     public getStatus(): Promise<ApiResponse<StatusResponse>> {
-        const path = this.getPath("")
-        return axios.get<StatusResponse>(path) 
-            .then((response) => {
-                return ApiResponse.success(response.data)
-            })
-            .catch((error : AxiosError) => {                
-                return ApiResponse.errorAxios(error)
-            })  
+        return call(statusGetStatus({ client: this.client, throwOnError: true })) as Promise<ApiResponse<StatusResponse>>
     }
-
 }
 
 export {

@@ -6,6 +6,8 @@ import { TenantsEndpoints } from "../endpoints/v1/tenant"
 import { AccountsEndpoints } from "../endpoints/v1/accounts"
 import { StatusEndpoint } from "../endpoints/v1/status"
 import { AddressEndpoint } from "../endpoints/v1/address"
+import { ContractsEndpoints } from "../endpoints/v1/contracts"
+import { WalletEndpoints } from "../endpoints/v1/wallet"
 
 enum ENDPOINTS {
     SANDBOX = "https://sandbox-api.brifle.de",
@@ -54,6 +56,7 @@ class ApiV1 {
      * gets an instance of the SignatureEndpoints
      * @returns ContentEndpoints
      */
+    /** @deprecated the signature endpoints are deprecated by the API; use `contracts()` */
     public signature() : SignaturesEndpoint {
         return new SignaturesEndpoint(this)
     }
@@ -96,6 +99,22 @@ class ApiV1 {
      */
     public address(): AddressEndpoint {
         return new AddressEndpoint(this)
+    }
+
+    /**
+     * gets an instance of the ContractsEndpoints (documents signed by one or more signers)
+     * @returns ContractsEndpoints
+     */
+    public contracts(): ContractsEndpoints {
+        return new ContractsEndpoints(this)
+    }
+
+    /**
+     * gets an instance of the WalletEndpoints (issued wallet items)
+     * @returns WalletEndpoints
+     */
+    public wallet(): WalletEndpoints {
+        return new WalletEndpoints(this)
     }
 
 }
