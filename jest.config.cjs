@@ -1,8 +1,8 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} **/
 module.exports = {
   testEnvironment: "node",
-  setupFiles: ["dotenv/config"],
   transform: {
-    "^.+\.tsx?$": ["ts-jest",{}],
+    "^.+\\.tsx?$": ["ts-jest", { tsconfig: { module: "commonjs", esModuleInterop: true, isolatedModules: true } }],
   },
+  testMatch: ["<rootDir>/test/**/*.test.ts"],
 };

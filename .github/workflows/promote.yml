@@ -1,0 +1,188 @@
+name: Promote release candidate to npm
+
+# Turns a release candidate into a stable release: builds the rc's source with
+# the version X.Y.Z (the only difference to the tested rc), publishes it to
+# npm, then creates the stable tag and the GitHub Release. This is the only way
+# a version reaches npm and the only way a stable vX.Y.Z tag comes into
+# existence; the next merge into release/X.Y then computes vX.Y.(Z+1)-rc.1.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release candidate to promote, e.g. v0.4.0-rc.2 (becomes v0.4.0 on npm)'
+        required: true
+
+concurrency: promote-stable
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      rc: ${{ steps.v.outputs.rc }}
+      stable: ${{ steps.v.outputs.stable }}
+      # Only the highest stable version may move npm's `latest`, so promoting a
+      # fix for an older minor cannot move it backwards.
+      is_newest: ${{ steps.v.outputs.is_newest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Validate version
+        id: v
+        env:
+          RC: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RC" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
+            echo "::error::'$RC' is not a release candidate tag (expected vX.Y.Z-rc.N)."
+            exit 1
+          fi
+          git rev-parse --verify --quiet "refs/tags/$RC" >/dev/null \
+            || { echo "::error::Tag $RC does not exist."; exit 1; }
+
+          STABLE="${RC%-rc.*}"
+          if git rev-parse --verify --quiet "refs/tags/$STABLE" >/dev/null; then
+            echo "::error::$STABLE is already released."
+            exit 1
+          fi
+
+          NEWEST=$( { git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true; echo "$STABLE"; } | sort -V | tail -1)
+          echo "rc=$RC" >> "$GITHUB_OUTPUT"
+          echo "stable=$STABLE" >> "$GITHUB_OUTPUT"
+          echo "is_newest=$([[ "$NEWEST" == "$STABLE" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: prepare
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      # npm trusted publishing (OIDC) and provenance
+      id-token: write
+    outputs:
+      file: ${{ steps.pack.outputs.name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.prepare.outputs.rc }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm >= 11.5.
+      - run: npm install -g npm@^11.5.1
+
+      # The same tree the stable tag will point at (release job below):
+      # the rc's commit with package.json set to X.Y.Z.
+      - name: Set version X.Y.Z
+        env:
+          VERSION: ${{ needs.prepare.outputs.stable }}
+        run: .github/scripts/set-version.sh "${VERSION#v}"
+
+      - run: npm ci
+
+      - name: Pack
+        id: pack
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          NAME="$(npm pack --pack-destination out --silent | tail -1)"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      # Safe to re-run: a version already on npm is not published again (npm
+      # refuses that anyway). With trusted publishing configured on npmjs.com
+      # for this workflow no token is needed; NPM_TOKEN is the fallback.
+      - name: Publish to npm
+        env:
+          VERSION: ${{ needs.prepare.outputs.stable }}
+          IS_NEWEST: ${{ needs.prepare.outputs.is_newest }}
+          FILE: out/${{ steps.pack.outputs.name }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          NAME="$(node -p "require('./package.json').name")"
+          V="${VERSION#v}"
+          if [[ -n "$(npm view "$NAME@$V" version 2>/dev/null || true)" ]]; then
+            echo "::notice::$NAME@$V is already on npm."
+            exit 0
+          fi
+          if [[ "$IS_NEWEST" == "true" ]]; then
+            DIST_TAG=latest
+          else
+            DIST_TAG="release-$(echo "$V" | cut -d. -f1,2)"
+          fi
+          npm publish "$FILE" --access public --provenance --tag "$DIST_TAG"
+          echo "### npm: \`$NAME@$V\` (dist-tag \`$DIST_TAG\`)" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: out/${{ steps.pack.outputs.name }}
+
+  # Last on purpose: the stable tag is what makes the next patch number move on,
+  # so it must only exist once the package is on npm. Safe to re-run.
+  release:
+    needs: [prepare, publish]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # Only the release GitHub App may create v* tags (see tag ruleset).
+      - uses: actions/create-github-app-token@v1
+        id: app
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-workflows: write
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.app.outputs.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm-package
+          path: out
+
+      - name: Tag stable release and publish GitHub Release
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          RC: ${{ needs.prepare.outputs.rc }}
+          VERSION: ${{ needs.prepare.outputs.stable }}
+          IS_NEWEST: ${{ needs.prepare.outputs.is_newest }}
+        run: |
+          set -euo pipefail
+          if ! git rev-parse --verify --quiet "refs/tags/$VERSION" >/dev/null; then
+            git config user.name "brifle-release-bot[bot]"
+            git config user.email "brifle-release-bot[bot]@users.noreply.github.com"
+            # The stable tag is the RC commit plus a commit that only sets the
+            # version to X.Y.Z: exactly the tree that was published above.
+            RC_SHA="$(git rev-list -n1 "$RC")"
+            SHA="$(.github/scripts/commit-version.sh "${VERSION#v}" "$RC_SHA")"
+            git tag -a "$VERSION" -m "$VERSION" "$SHA"
+            git push origin "refs/tags/$VERSION"
+            # release/X.Y follows only while nothing was merged after the RC.
+            BRANCH="release/$(echo "${VERSION#v}" | cut -d. -f1,2)"
+            if [[ "$SHA" != "$RC_SHA" ]]; then
+              if [[ "$(git ls-remote origin "refs/heads/$BRANCH" | cut -f1)" == "$RC_SHA" ]] \
+                && git push origin "$SHA:refs/heads/$BRANCH"; then
+                echo "\`$BRANCH\` now says \`${VERSION#v}\`" >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "::notice::$BRANCH is no longer at $RC; the version commit is on the tag only."
+              fi
+            fi
+          fi
+          if ! gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release create "$VERSION" out/*.tgz --verify-tag --generate-notes --title "$VERSION" \
+              --latest="$IS_NEWEST"
+          fi

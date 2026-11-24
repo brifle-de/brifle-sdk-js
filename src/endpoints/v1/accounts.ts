@@ -1,42 +1,24 @@
-import axios, { AxiosError } from "axios"
-import { ApiV1, ApiV1State } from "../../api/api"
+import { ApiV1 } from "../../api/api"
 import { AccountInfo } from "./responses/accounts"
 import { ApiResponse } from "./apiResponse"
+import { accountsGetBasicInfo } from "../../generated/sdk.gen"
+import { call, clientFor } from "../../core/transport"
+import type { Client } from "../../generated/client"
 
 class AccountsEndpoints {
-    private endpoint: string
-    private readonly VERSION: string = "v1"
-    private state : ApiV1State
+    private readonly client: Client
 
     constructor(api: ApiV1) {
-        this.endpoint = api.endpoint
-        this.state = api.apiState     
-    } 
-
-    private getPath(path: string): string {
-        return `${this.endpoint}/${this.VERSION}/accounts/${path}`
+        this.client = clientFor(api)
     }
 
     /**
-     * Gets a tenant by its ID
+     * get the basic info of an account (name and type)
+     * @param accountId - The id of the account
      */
-    public getById(accountId: string): Promise<ApiResponse<AccountInfo>>{
-        const path = this.getPath(`${accountId}`)
-        console.log(path, path)
-        
-        return axios.get<AccountInfo>(path, {
-            headers: {
-                "Authorization": `Bearer ${this.state.auth_token}`,
-                "Content-Type": "application/json"
-            }
-        })
-            .then((response) => {
-                return ApiResponse.success(response.data)
-            })
-            .catch((error : AxiosError) => {                
-                return ApiResponse.errorAxios(error)
-            })            
-    }   
+    public getById(accountId: string): Promise<ApiResponse<AccountInfo>> {
+        return call(accountsGetBasicInfo({ client: this.client, path: { id: accountId }, throwOnError: true })) as Promise<ApiResponse<AccountInfo>>
+    }
 }
 
 export {

@@ -1,69 +1,56 @@
-import axios, { AxiosError } from "axios"
-import { ApiV1, ApiV1State } from "../../api/api"
+import { ApiV1 } from "../../api/api"
 import { CreateSignatureReferenceRequest } from "./requests/signatures"
 import { ApiResponse } from "./apiResponse"
 import { CreateSignatureReferenceResponse } from "./responses/signatures"
+import { signatureCreateSignatureReference, signatureExportSignature } from "../../generated/sdk.gen"
+import { call, clientFor } from "../../core/transport"
+import type { Client } from "../../generated/client"
 
+/**
+ * @deprecated the signature endpoints are deprecated by the API (it sends
+ * `Deprecation` headers). Use `contracts()`, which covers the whole signing
+ * flow.
+ */
 class SignaturesEndpoint {
-    private endpoint: string
-    private readonly VERSION: string = "v1"
-    private state : ApiV1State
+    private readonly client: Client
 
     constructor(api: ApiV1) {
-        this.endpoint = api.endpoint
-        this.state = api.apiState     
-    } 
-
-    /**
-     * builds the full path
-     * @param path - The path to the endpoint, e.g. "authentication/login"
-     * @returns 
-     */
-    private getPath(path: string): string {
-        return `${this.endpoint}/${this.VERSION}/signature/${path}`        
+        this.client = clientFor(api)
     }
 
-    
     /**
      * creates a signature reference
+     * @deprecated use `contracts().create`
      * @param tenantId - The id of the tenant
      * @param request - The request object
      * @returns the response object
      */
-    public createSignatureReference(tenantId: string, request: CreateSignatureReferenceRequest) : Promise<ApiResponse<CreateSignatureReferenceResponse>> {
-        const path = this.getPath(`${tenantId}/reference`)
-        const headers = {
-            "Authorization": `Bearer ${this.state.auth_token}`,
-        }
-        return axios.post<CreateSignatureReferenceResponse>(path, request, { headers })
-            .then((response) => {
-                return ApiResponse.success(response.data)
-            })
-            .catch((error : AxiosError) => {
-                return ApiResponse.errorAxios(error)
-            }
-        );
+    public createSignatureReference(tenantId: string, request: CreateSignatureReferenceRequest): Promise<ApiResponse<CreateSignatureReferenceResponse>> {
+        return call(signatureCreateSignatureReference({
+            client: this.client,
+            path: { tenant_id: tenantId },
+            body: request as never,
+            throwOnError: true,
+        })) as Promise<ApiResponse<CreateSignatureReferenceResponse>>
     }
 
     /**
-     * gets a signature reference
+     * exports a signature
+     * @deprecated use `contracts().getSignature`
      * @param signatureId - The id of the signature
-     * @returns the response object
+     * @param format - The format of the export
+     * @returns the signature (XAdES XML as a string)
      */
     public exportSignature(signatureId: string, format: 'xml'): Promise<ApiResponse<any>> {
-        const path = this.getPath(`${signatureId}/export/${format}`)
-        const headers = {
-            "Authorization": `Bearer ${this.state.auth_token}`,
-        }
-        return axios.get<any>(path, { headers })
-            .then((response) => {
-                return ApiResponse.success(response.data)
-            })
-            .catch((error : AxiosError) => {
-                return ApiResponse.errorAxios(error)
-            }
-        );            
+        return call(signatureExportSignature({
+            client: this.client,
+            path: { signature_id: signatureId, format },
+            responseType: 'text',
+            throwOnError: true,
+        }))
     }
 }
 
-export {SignaturesEndpoint};
+export {
+    SignaturesEndpoint
+}

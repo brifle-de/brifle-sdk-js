@@ -1,6 +1,89 @@
 # Brifle SDK
 
-A Typescript SDK to interact with the Rest API of the Brifle platform.
+A TypeScript SDK for the REST API of the Brifle platform (`@brifle/brifle-sdk`).
 
+```bash
+npm install @brifle/brifle-sdk
+```
 
+```ts
+import { ApiV1 } from "@brifle/brifle-sdk"
 
+const api = ApiV1.sandbox            // or ApiV1.production, or new ApiV1("https://…")
+const login = await api.authentication().login({ key: API_KEY, secret: API_SECRET })
+if (login.isError) throw new Error(login.error?.message)
+
+const sent = await api.content().sendContent(TENANT_ID, {
+  to: { email: "max@example.org" },
+  type: "letter",
+  subject: "Ihre Rechnung",
+  body: [{ type: "application/pdf", content: pdfBase64 }],
+})
+console.log(sent.data?.id)
+```
+
+Every method returns an `ApiResponse<T>`: `isSuccess` / `data` on success,
+`isError` / `error` (`{ code, message, status }`, see the API's error code table)
+otherwise. Methods do not throw on API errors; the only exception is the
+deprecated `content().getCoverLetterContent` (use `getCoverLetter`).
+
+| Resource | What it covers |
+|---|---|
+| `authentication()` | `login`, `logout` |
+| `content()` | send letters, receiver checks, documents, actions, delivery status and certificate, cover letters, paper-mail preview |
+| `contracts()` | documents signed by one or more signers in the Brifle app (needs an API with contracts enabled, otherwise code 40499) |
+| `wallet()` | issue, read and revoke wallet items |
+| `mailbox()` | inbox and outbox search |
+| `tenants()`, `accounts()`, `address()`, `status()` | lookups |
+| `signature()` | deprecated, use `contracts()` |
+
+## How the SDK is built
+
+```
+openapi/api.json        public API spec, exported from brifle-core (mix openapi.export)
+src/generated/          low-level client, generated from the spec (npm run generate), internal
+src/mappers/            translate between the public types and the wire format
+src/endpoints/, src/api the public API: hand-written, stable
+```
+
+The public classes and types are the contract with SDK users. The generated
+layer follows the API; the mappers absorb API changes, so a regenerated client
+does not change what users compile against.
+
+## Compatibility
+
+Within a major version the public API only grows:
+
+- no method, parameter, type or field is removed or renamed;
+- new parameters are optional; request types only get optional fields or wider unions;
+- something that has to go is marked `@deprecated` and keeps working until the next major.
+
+This is enforced in CI:
+
+- `etc/brifle-sdk.api.md` (API Extractor) is the reviewed public API. A change
+  to it fails CI until the report is updated (`npm run api:update`) and committed,
+  so every change to the public API shows up in the pull request diff.
+- `test/types/compat.test-d.ts` checks that everything that compiled against the
+  published 0.3.3 (`test/compat/baseline/v0.3.3.d.ts`) still compiles.
+- `test/types/drift.test-d.ts` checks the public types against the generated
+  ones: every declared field exists in the spec and every field the API requires
+  can be sent.
+
+## Development
+
+```bash
+npm ci
+BRIFLE_CORE_DIR=../brifle-core npm run spec:pull   # or SPEC_FILE=/path/to/api.json
+npm run generate      # regenerate src/generated from openapi/api.json
+npm run typecheck     # compile, compatibility and drift checks
+npm test              # offline unit tests (mocked HTTP)
+npm run api:check     # public API unchanged? (api:update to accept a change)
+npm run build         # dist/ (ESM, CJS, bundled .d.ts)
+```
+
+`npm run test:live` runs the old end-to-end tests against a real API. It reads
+`API_TEST_ENDPOINT` (default internaltest), `API_TEST_KEY`, `API_TEST_SECRET`,
+`API_TEST_TENANT_ID`, `API_TEST_ACCOUNT_ID` and the `TEST_RECEIVER_*` variables
+from the environment or a local `.env`.
+
+Releases are made by CI from `release/X.Y` branches, see `.github/RELEASE.md`.
